@@ -55,6 +55,7 @@ get_stat(const char* path, struct stat* st)
 
     memset(st, 0, sizeof(struct stat));
     st->st_uid  = getuid();
+    st->st_gid = getgid();
     st->st_mode = dat->mode;
     if (dat->data) {
         st->st_size = strlen(dat->data);

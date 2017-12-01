@@ -1,0 +1,5 @@
+*.o
+*.tmp
+*.log
+nufs
+./mnt

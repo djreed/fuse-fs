@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "storage.h"
-#include "hints/pages.c"
+#include "hints/pages.h"
 
 typedef struct file_data {
     const char* path;

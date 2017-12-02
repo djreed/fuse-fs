@@ -48,7 +48,7 @@ pages_get_page(int pnum)
 }
 
 pnode*
-pages_get_node(int node_id)
+pages_get_node(int pnum)
 {
     pnode* idx = (pnode*) pages_get_page(0);
     return &(idx[pnum]);

@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "storage.h"
+#include "hints/pages.c"
 
 typedef struct file_data {
     const char* path;
@@ -19,7 +20,7 @@ static file_data file_table[] = {
 void
 storage_init(const char* path)
 {
-    printf("TODO: Store file system data in: %s\n", path);
+	pages_init(path);
 }
 
 static int

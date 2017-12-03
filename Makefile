@@ -21,7 +21,7 @@ unmount:
 	fusermount -u mnt || true
 
 test: nufs
-	perl test.t
+	perl test.pl
 
 gdb: nufs
 	mkdir -p mnt || true

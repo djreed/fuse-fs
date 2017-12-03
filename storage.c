@@ -32,7 +32,7 @@ int ft_size(const file_data* ft) {
 void
 storage_init(const char* path)
 {
-	pages_init(path);
+	//	pages_init(path);
 }
 
 static int

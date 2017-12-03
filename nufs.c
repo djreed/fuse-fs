@@ -11,8 +11,9 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
-#include "storage.h"
+#include "data.h"
 
+static super_blk* fs;
 
 // implementation for: man 2 access
 // Checks if a file exists.
@@ -20,7 +21,7 @@ int
 nufs_access(const char *path, int mask)
 {
 	printf("access(%s, %04o)\n", path, mask);
-	return get_access(path, mask);
+	return fs_access(fs, path, mask);
 }
 
 // implementation for: man 2 stat
@@ -29,7 +30,7 @@ int
 nufs_getattr(const char *path, struct stat *st)
 {
     printf("getattr(%s)\n", path);
-    int rv = get_stat(path, st);
+    int rv = fs_getattr(fs, path, st);
     if (rv == -1) {
         return -ENOENT;
     }
@@ -45,7 +46,7 @@ nufs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
              off_t offset, struct fuse_file_info *fi)
 {
     printf("readdir(%s)\n", path);
-    return get_readdir(path, buf, filler, offset, fi);
+    return fs_readdir(fs, path, buf, filler, offset, fi);
 }
 
 // mknod makes a filesystem object like a file or directory
@@ -118,7 +119,9 @@ int
 nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
     printf("read(%s, %ld bytes, @%ld)\n", path, size, offset);
+    /*
     const char* data = get_data(path);
+
 
     int len = strlen(data) + 1;
     if (size < len) {
@@ -126,7 +129,9 @@ nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_fi
     }
 
     strlcpy(buf, data, len);
-    return len;
+    return data;
+    */
+    return 0;
 }
 
 // Actually write data
@@ -174,7 +179,7 @@ int
 main(int argc, char *argv[])
 {
     assert(argc > 2 && argc < 6);
-    storage_init(argv[--argc]);
+    fs = init_fs(argv[--argc]);
     nufs_init_ops(&nufs_ops);
     return fuse_main(argc, argv, &nufs_ops, NULL);
 }

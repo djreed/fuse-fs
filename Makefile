@@ -1,5 +1,5 @@
 
-SRCS := $(wildcard *.c) $(wildcard hints/*.c)
+SRCS := $(wildcard *.c)
 OBJS := $(SRCS:.c=.o)
 HDRS := $(wildcard *.h)
 

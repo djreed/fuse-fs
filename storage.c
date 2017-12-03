@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#define FUSE_USE_VERSION 26
+#include <fuse.h>
 
 #include "storage.h"
 #include "hints/pages.h"
@@ -13,10 +15,19 @@ typedef struct file_data {
 } file_data;
 
 static file_data file_table[] = {
-    {"/", 040755, 0},
+    {"/", 0040755, NULL},
     {"/hello.txt", 0100644, "hello\n"},
     {0, 0, 0},
 };
+
+int ft_size(const file_data* ft) {
+	int c = 0;
+	file_data d = ft[0];
+	while (d.path != NULL) {
+		d = ft[++c];
+	}
+	return c;
+}
 
 void
 storage_init(const char* path)
@@ -103,5 +114,38 @@ int get_access(const char* path, int mode) {
 		return -EACCES;
 	}
 
+	return 0;
+}
+
+int get_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+                off_t offset, struct fuse_file_info* fi) {
+	(void) offset;
+	(void) fi;
+
+	if (strncmp(path, "/", 1) != 0) {
+		return -ENOENT;
+	}
+
+	struct stat st;
+	if (get_stat(path, &st) != 0) {
+		return -ENOENT;
+	}
+	
+	filler(buf, ".", &st, 0);
+	filler(buf, "..", &st, 0);
+	
+	int ft_sz = ft_size(file_table);
+	unsigned long path_len = strlen(path);
+
+	for (int i = 0; i < ft_sz; i++) {
+		file_data fd = file_table[i];
+		if (strncmp(fd.path, path, path_len) == 0 && strlen(fd.path) != path_len) {
+			if(get_stat(fd.path, &st) != 0) {
+				return -ENOENT;
+			}
+			filler(buf, fd.path + path_len, NULL, 0);
+		}
+	}
+	
 	return 0;
 }

@@ -80,24 +80,13 @@ get_data(const char* path)
 }
 
 int check_bit(int i, int b) {
-	return i & (1 << b);
+	return (i & (1 << b)) >> b;
 }
 
 int check_mode(const file_data* f, int mode) {
 	// NOTE: we only check owner perms
-	int o_perms = f->mode / 100;
-	int flags = 0;
-	if (check_bit(o_perms, 0)) {
-		flags = flags | X_OK;
-	}
-	if (check_bit(o_perms, 1)) {
-		flags = flags | W_OK;
-	}
-	if (check_bit(o_perms, 2)) {
-		flags = flags | R_OK;
-	}
-
-	return mode == flags;
+	int flags = (f->mode & 0b111000000) >> 6;
+	return (flags & mode) != 0;
 }
 
 int get_access(const char* path, int mode) {

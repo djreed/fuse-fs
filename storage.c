@@ -103,8 +103,7 @@ int check_mode(const file_data* f, int mode) {
 int get_access(const char* path, int mode) {
 	file_data* dat = get_file_data(path);
 	if (!dat) {
-		errno = ENOENT;
-		return -1;
+		return -ENOENT;
 	}
 
 	if (mode == F_OK) {
@@ -112,8 +111,7 @@ int get_access(const char* path, int mode) {
 	}
 
 	if (!check_mode(dat, mode)) {
-		errno = EACCES;
-		return -1;
+		return -EACCES;
 	}
 
 	return 0;

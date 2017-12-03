@@ -3,4 +3,5 @@
 *.log
 nufs
 ./mnt
+mnt
 *.nufs

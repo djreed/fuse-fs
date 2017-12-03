@@ -1,6 +1,7 @@
-
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 
 #include "storage.h"
 #include "hints/pages.h"
@@ -78,3 +79,42 @@ get_data(const char* path)
     return dat->data;
 }
 
+int check_bit(int i, int b) {
+	return i & (1 << b);
+}
+
+int check_mode(const file_data* f, int mode) {
+	// NOTE: we only check owner perms
+	int o_perms = f->mode / 100;
+	int flags = 0;
+	if (check_bit(o_perms, 0)) {
+		flags = flags | X_OK;
+	}
+	if (check_bit(o_perms, 1)) {
+		flags = flags | W_OK;
+	}
+	if (check_bit(o_perms, 2)) {
+		flags = flags | R_OK;
+	}
+
+	return mode == flags;
+}
+
+int get_access(const char* path, int mode) {
+	file_data* dat = get_file_data(path);
+	if (!dat) {
+		errno = ENOENT;
+		return -1;
+	}
+
+	if (mode == F_OK) {
+		return 0;
+	}
+
+	if (!check_mode(dat, mode)) {
+		errno = EACCES;
+		return -1;
+	}
+
+	return 0;
+}

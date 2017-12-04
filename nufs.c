@@ -94,7 +94,7 @@ int
 nufs_chmod(const char *path, mode_t mode)
 {
         printf("chmod(%s, %04o)\n", path, mode);
-        return -1;
+        return fs_chmod(fs, path, mode);
 }
 
 int
@@ -119,18 +119,6 @@ int
 nufs_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
         printf("read(%s, %ld bytes, @%ld)\n", path, size, offset);
-        /*
-          const char* data = get_data(path);
-
-
-          int len = strlen(data) + 1;
-          if (size < len) {
-          len = size;
-          }
-
-          strlcpy(buf, data, len);
-          return data;
-        */
         return fs_read(fs, path, buf, size, offset, fi);
 }
 

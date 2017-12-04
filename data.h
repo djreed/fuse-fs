@@ -42,5 +42,6 @@ int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t
 int fs_rename(const super_blk* fs, const char* from, const char* to);
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
-int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t rdev);
+int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev);
 int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]);
+int fs_chmod(const super_blk* fs, const char* path, mode_t mode);

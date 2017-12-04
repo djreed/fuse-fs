@@ -160,7 +160,7 @@ int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t
 
 int fs_rename(const super_blk* fs, const char* from, const char* to) {
         // Get respective inode
-        inode* node = get_inode(fs, from);
+        inode* node = (inode*)get_inode(fs, from);
 
         if (node == NULL) {
                 return -ENOENT;
@@ -169,11 +169,14 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
         memset(node->path, '\0', strlen(node->path));
         memcpy(node->path, to, strlen(to));
 
+        time_t t = time(NULL);
+        node->changed_at = t;
+
         return 0;
 }
 
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        const inode* node = get_inode(fs, path);
+        inode* node = (inode*)get_inode(fs, path);
 
         if (node == NULL) {
                 return -ENOENT;
@@ -197,13 +200,16 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
 
         memcpy(buf, src, read_size);
 
+        time_t t = time(NULL);
+        node->accessed_at = t;
+
         // Number of bytes read
         return read_size;
 }
 
 // Write data to file
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        inode* node = get_inode(fs, path);
+        inode* node = (inode*)get_inode(fs, path);
 
         if (node == NULL) {
                 return -ENOENT;
@@ -221,11 +227,15 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
 
         memcpy(write_point, buf, size);
 
+        time_t t = time(NULL);
+        node->modified_at = t;
+
         node->data_size = node->data_size + size;
         
         // Number of bytes written
         return size;
 }
+
 
 inode* fs_get_free_inode(super_blk* fs) {
 	for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
@@ -266,4 +276,15 @@ int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]) {
 	n->accessed_at = ts[0].tv_sec;
 	n->modified_at = ts[1].tv_sec;
 	n->changed_at = n->modified_at;
+}
+
+int fs_chmod(const super_blk* fs, const char* path, mode_t mode) {
+        inode* n = (inode*)get_inode(fs, path);
+
+        n->mode = mode;
+        
+        time_t t = time(NULL);
+        n->changed_at = t;
+
+        return 0;
 }

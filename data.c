@@ -205,18 +205,14 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
         }
         
         char* data = node->data;
-        printf("data: '%s'\n", data);
         
         char* write_point = data + offset;
-        printf("write pt: '%s'\n", write_point);
 
         // If end of write puts you past allocated memory
         if (write_point + size > data + fs->data.blk_sz
             || offset > fs->data.blk_sz) { // Or would start you OOB
                 return -ENOMEM;
         }
-
-        printf("buf: '%s'\nsize: %i\n", buf, size);
 
         memcpy(write_point, buf, size);
 

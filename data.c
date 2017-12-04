@@ -39,7 +39,7 @@ void init_default(super_blk* fs) {
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0040444;
+	hello->mode = 0100444;
 	hello->used = true;
 }
 
@@ -86,7 +86,6 @@ int fs_access(const super_blk* fs, const char* path, int mask) {
 int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	const inode* n = get_inode(fs, path);
 	if (n == NULL) {
-		printf("enoent\n");
 		return -ENOENT;
 	}
 

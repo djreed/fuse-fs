@@ -2,15 +2,19 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <time.h>
 
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
 typedef struct inode {
-	bool used;
 	char path[256];
 	int mode;
 	char* data;
+	time_t accessed_at;
+	time_t modified_at;
+	time_t changed_at;
 } inode;
 
 typedef struct data_blks {
@@ -34,3 +38,5 @@ int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t
 int fs_rename(const super_blk* fs, const char* from, const char* to);
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
+int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t rdev);
+int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]);

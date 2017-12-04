@@ -11,6 +11,7 @@ typedef struct inode {
 	char path[256];
 	int mode;
 	char* data;
+        int data_size;
 } inode;
 
 typedef struct data_blks {

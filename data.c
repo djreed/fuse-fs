@@ -12,9 +12,6 @@
 
 #include "data.h"
 
-const int NUFS_SIZE = 1024 * 1024;
-const int PAGE_COUNT = 256;
-
 char* get_free_blk(data_blks* blks) {
 	size_t free_idx = 0;
 	for (size_t i = 0; i < blks->n_blks; i++) {
@@ -37,6 +34,7 @@ void init_default(super_blk* fs) {
 	root->accessed_at = time(NULL);
 	root->changed_at = root->accessed_at;
 	root->modified_at = root->accessed_at;
+  root->data_size = 0;
 
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
@@ -45,6 +43,8 @@ void init_default(super_blk* fs) {
 	hello->accessed_at = time(NULL);
 	hello->changed_at = hello->accessed_at;
 	hello->modified_at = hello->accessed_at;
+	hello->mode = 0100777;
+	hello->data_size = 5;
 }
 
 super_blk* init_fs(const char* path) {
@@ -163,12 +163,12 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
         inode* node = get_inode(fs, from);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
+
         memset(node->path, '\0', strlen(node->path));
         memcpy(node->path, to, strlen(to));
 
-        
         return 0;
 }
 
@@ -176,45 +176,59 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         const inode* node = get_inode(fs, path);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
         
         char* data = node->data;
 
-        int len = strlen(data) + 1;
-
-        if (size < len) {
-                len = size;
+        // Can't read past data inside file
+        if (offset > node->data_size) {
+                return -ENOMEM;
         }
 
+        int read_size = node->data_size;
         char* src = data + offset;
 
-        memcpy(buf, src, len);
+        // min(size to read, size of file from read_start to EOF)
+        read_size = size < read_size ? size : read_size;
 
-        return 0;
+        int to_end = node->data_size - offset;
+        read_size = to_end < read_size ? to_end : read_size;
+
+        memcpy(buf, src, read_size);
+
+        // Number of bytes read
+        return read_size;
 }
 
+// Write data to file
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        const inode* node = get_inode(fs, path);
+        inode* node = get_inode(fs, path);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
-
+        
         char* data = node->data;
+        printf("data: '%s'\n", data);
+        
+        char* write_point = data + offset;
+        printf("write pt: '%s'\n", write_point);
 
-        int len = strlen(buf) + 1;
-
-        if (size < len) {
-                len = size;
+        // If end of write puts you past allocated memory
+        if (write_point + size > data + fs->data.blk_sz
+            || offset > fs->data.blk_sz) { // Or would start you OOB
+                return -ENOMEM;
         }
 
-        char* dest = data + offset;
+        printf("buf: '%s'\nsize: %i\n", buf, size);
 
-        //TODO: Error handle for destination being too small for data
-        memcpy((void*)dest, buf, len);
+        memcpy(write_point, buf, size);
 
-        return 0;
+        node->data_size = node->data_size + size;
+        
+        // Number of bytes written
+        return size;
 }
 
 inode* fs_get_free_inode(super_blk* fs) {

@@ -8,6 +8,9 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
+static const int NUFS_SIZE = 1024 * 1024;
+static const int PAGE_COUNT = 256;
+
 typedef struct inode {
 	char path[256];
 	int mode;
@@ -15,6 +18,7 @@ typedef struct inode {
 	time_t accessed_at;
 	time_t modified_at;
 	time_t changed_at;
+	int data_size;
 } inode;
 
 typedef struct data_blks {

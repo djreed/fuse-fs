@@ -30,13 +30,7 @@ int
 nufs_getattr(const char *path, struct stat *st)
 {
         printf("getattr(%s)\n", path);
-        int rv = fs_getattr(fs, path, st);
-        if (rv == -1) {
-                return -ENOENT;
-        }
-        else {
-                return 0;
-        }
+        return fs_getattr(fs, path, st);
 }
 
 // implementation for: man 2 readdir

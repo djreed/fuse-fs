@@ -117,7 +117,7 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	st->st_gid = getgid();
 	st->st_mode = n->mode;
 	if (n->data) {
-		st->st_size = strlen(n->data);
+		st->st_size = n->data_size;
 	} else {
 		st->st_size = 0;
 	}
@@ -276,6 +276,8 @@ int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]) {
 	n->accessed_at = ts[0].tv_sec;
 	n->modified_at = ts[1].tv_sec;
 	n->changed_at = n->modified_at;
+
+	return 0;
 }
 
 int fs_chmod(const super_blk* fs, const char* path, mode_t mode) {

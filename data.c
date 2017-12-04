@@ -35,12 +35,14 @@ void init_default(super_blk* fs) {
 	memcpy(root->path, "/", 1);
 	root->mode = 0040755;
 	root->used = true;
+        root->data_size = 0;
 
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0040444;
+	hello->mode = 0100444;
 	hello->used = true;
+        hello->data_size = 5;
 }
 
 super_blk* init_fs(const char* path) {
@@ -159,17 +161,24 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         
         char* data = node->data;
 
-        int len = strlen(data) + 1;
+        int len = node->data_size;
+
+        char* src = data + offset;
+
+        if (src > data + len) {
+                return -1;
+        }
 
         if (size < len) {
                 len = size;
         }
 
-        char* src = data + offset;
+        int dsize = node->data_size - offset;
+        len = dsize < len ? dsize : len;
 
         memcpy(buf, src, len);
 
-        return 0;
+        return len;
 }
 
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
@@ -181,7 +190,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
 
         char* data = node->data;
 
-        int len = strlen(buf) + 1;
+        int len = strlen(buf);
 
         if (size < len) {
                 len = size;

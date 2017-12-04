@@ -39,7 +39,7 @@ void init_default(super_blk* fs) {
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0100444;
+	hello->mode = 0040444;
 	hello->used = true;
 }
 
@@ -86,6 +86,7 @@ int fs_access(const super_blk* fs, const char* path, int mask) {
 int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	const inode* n = get_inode(fs, path);
 	if (n == NULL) {
+		printf("enoent\n");
 		return -ENOENT;
 	}
 
@@ -139,7 +140,7 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
         // Get respective inode
         inode* node = get_inode(fs, from);
 
-        if (node == 0 || node == NULL) {
+        if (node == NULL) {
                 return -1;
         }
         memset(node->path, '\0', strlen(node->path));
@@ -152,7 +153,7 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
         const inode* node = get_inode(fs, path);
 
-        if (node == 0 || node == NULL) {
+        if (node == NULL) {
                 return -1;
         }
         
@@ -166,7 +167,6 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
 
         char* src = data + offset;
 
-        //TODO: Error handle for size_t != len
         memcpy(buf, src, len);
 
         return 0;

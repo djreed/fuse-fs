@@ -31,15 +31,20 @@ void init_default(super_blk* fs) {
 	root->data = NULL;
 	memcpy(root->path, "/", 1);
 	root->mode = 0040755;
-	root->used = true;
-        root->data_size = 0;
+	root->accessed_at = time(NULL);
+	root->changed_at = root->accessed_at;
+	root->modified_at = root->accessed_at;
+  root->data_size = 0;
 
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
+	hello->mode = 0100444;
+	hello->accessed_at = time(NULL);
+	hello->changed_at = hello->accessed_at;
+	hello->modified_at = hello->accessed_at;
 	hello->mode = 0100777;
-	hello->used = true;
-        hello->data_size = 5;
+	hello->data_size = 5;
 }
 
 super_blk* init_fs(const char* path) {
@@ -65,7 +70,7 @@ const inode* get_inode(const super_blk* fs, const char* path) {
 	size_t path_len = strlen(path);
 	for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
 		const inode* node = &fs->inodes[i];
-		if (!node->used) {
+		if (node->path[0] == '\0') {
 			continue;
 		}
 		
@@ -138,7 +143,7 @@ int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t
 	size_t path_len = strlen(path);
 	for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
 		inode n = fs->inodes[i];
-		if (!n.used) {
+		if (n.path[0] == '\0') {
 			continue;
 		}
 		
@@ -220,4 +225,45 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
         
         // Number of bytes written
         return size;
+}
+
+inode* fs_get_free_inode(super_blk* fs) {
+	for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
+		inode* n = &fs->inodes[i];
+		if (n->path[0] == 0) {
+			return n;
+		}
+	}
+
+	return NULL;
+}
+
+
+int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev) {
+	(void) dev;
+	
+	inode* n = fs_get_free_inode(fs);
+	if (n == NULL) {
+		return -ENOMEM;
+	}
+	
+	char* data_ptr = get_free_blk(&fs->data);
+	if (data_ptr == NULL) {
+		return -ENOMEM;
+	}
+	
+	n->mode = mode;
+	memcpy(n->path, path, strlen(path));
+
+	return 0;
+}
+
+int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]) {
+	inode* n = (inode*)get_inode(fs, path);
+	if (n == NULL) {
+		return -ENOENT;
+	}
+	n->accessed_at = ts[0].tv_sec;
+	n->modified_at = ts[1].tv_sec;
+	n->changed_at = n->modified_at;
 }

@@ -81,14 +81,32 @@ const inode* get_inode(const super_blk* fs, const char* path) {
 	return NULL;
 }
 
+int check_mode(const inode* n, int mode) {
+	// NOTE: we only check owner perms
+	int flags = (n->mode & 0b111000000) >> 6;
+	return (flags & mode) != 0;
+}
+
 int fs_access(const super_blk* fs, const char* path, int mask) {
+	inode* n = (inode*)get_inode(fs, path);
+	if (!n) {
+		return -ENOENT;
+	}
+
+	if (mask == F_OK) {
+		return 0;
+	}
+
+	if (!check_mode(n, mask)) {
+		return -EACCES;
+	}
+
 	return 0;
 }
 
 int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	const inode* n = get_inode(fs, path);
 	if (n == NULL) {
-		printf("enoent\n");
 		return -ENOENT;
 	}
 

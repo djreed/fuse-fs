@@ -176,6 +176,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         
         char* data = node->data;
 
+        // Can't read past data inside file
         if (offset > node->data_size) {
                 return -ENOMEM;
         }
@@ -183,9 +184,8 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         int read_size = node->data_size;
         char* src = data + offset;
 
-        if (size < read_size) {
-                read_size = size;
-        }
+        // min(size to read, size of file from read_start to EOF)
+        read_size = size < read_size ? size : read_size;
 
         int to_end = node->data_size - offset;
         read_size = to_end < read_size ? to_end : read_size;

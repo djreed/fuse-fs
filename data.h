@@ -25,7 +25,7 @@ typedef struct data_blks {
 	size_t blk_sz;
 	size_t n_blks;
 	bool blk_status[255]; // false = open, true = used
-	char* data;
+	size_t data_offset;
 } data_blks;
 
 typedef struct super_blk {

@@ -59,7 +59,7 @@ super_blk* init_fs(const char* path) {
 
 	fs->data.blk_sz = NUFS_SIZE / PAGE_COUNT;
 	fs->data.n_blks = PAGE_COUNT;
-	fs->data.data = (char*)(fs + 1);
+	fs->data.data_offset = sizeof(super_blk);
 
 	init_default(fs);
 	

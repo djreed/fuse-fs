@@ -65,7 +65,7 @@ int
 nufs_unlink(const char *path)
 {
         printf("unlink(%s)\n", path);
-        return -1;
+        return fs_unlink(fs, path);
 }
 
 int

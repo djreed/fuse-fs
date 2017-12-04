@@ -291,3 +291,7 @@ int fs_chmod(const super_blk* fs, const char* path, mode_t mode) {
 
         return 0;
 }
+
+int fs_unlink(const super_blk* fs, const char* path) {
+        return -1
+}

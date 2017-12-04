@@ -264,6 +264,7 @@ int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev) {
 	
 	n->mode = mode;
 	memcpy(n->path, path, strlen(path));
+	n->data = data_ptr;
 
 	return 0;
 }

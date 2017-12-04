@@ -12,7 +12,7 @@
 
 #include "data.h"
 
-char* get_free_blk(data_blks* blks) {
+data_blk_info get_free_blk(data_blks* blks) {
 	size_t free_idx = 0;
 	for (size_t i = 0; i < blks->n_blks; i++) {
 		if (blks->blk_status[i] == false) {
@@ -22,7 +22,11 @@ char* get_free_blk(data_blks* blks) {
 		}
 	}
 
-	return blks->data + (free_idx * blks->blk_sz);
+	data_blk_info r;
+	r.blk_status_idx = free_idx;
+	r.offset = blks->data_offset + (free_idx * blks->blk_sz);
+
+	return r;
 }
 
 void init_default(super_blk* fs) {

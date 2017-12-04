@@ -11,10 +11,15 @@
 static const int NUFS_SIZE = 1024 * 1024;
 static const int PAGE_COUNT = 256;
 
+typedef struct data_blk_info {
+	size_t blk_status_idx;
+	size_t offset;
+} data_blk_info;
+
 typedef struct inode {
 	char path[256];
 	int mode;
-	char* data;
+	data_blk_info db_info;
 	time_t accessed_at;
 	time_t modified_at;
 	time_t changed_at;

@@ -6,6 +6,9 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
+static const int NUFS_SIZE = 1024 * 1024;
+static const int PAGE_COUNT = 256;
+
 typedef struct inode {
 	bool used;
 	char path[256];

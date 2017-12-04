@@ -103,8 +103,7 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	return 0;
 }
 
-int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t filler,
-               off_t offset, struct fuse_file_info* fi) {
+int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi) {
 	(void) offset;
 	(void) fi;
 	if (strncmp(path, "/", 1) != 0) {
@@ -158,7 +157,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 return -1;
         }
         
-        const char* data = node->data;
+        char* data = node->data;
 
         int len = strlen(data) + 1;
 
@@ -166,10 +165,10 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 len = size;
         }
 
-        void* src = ((void*)data) + offset;
+        char* src = data + offset;
 
         //TODO: Error handle for size_t != len
-        memcpy((void*)buf, src, len);
+        memcpy(buf, src, len);
 
         return 0;
 }
@@ -181,7 +180,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 return -1;
         }
 
-        const char* data = node->data;
+        char* data = node->data;
 
         int len = strlen(buf) + 1;
 
@@ -189,7 +188,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 len = size;
         }
 
-        void* dest = ((void*)data) + offset;
+        char* dest = data + offset;
 
         //TODO: Error handle for destination being too small for data
         memcpy((void*)dest, buf, len);

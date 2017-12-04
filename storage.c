@@ -94,29 +94,6 @@ int check_bit(int i, int b) {
 	return (i & (1 << b)) >> b;
 }
 
-int check_mode(const file_data* f, int mode) {
-	// NOTE: we only check owner perms
-	int flags = (f->mode & 0b111000000) >> 6;
-	return (flags & mode) != 0;
-}
-
-int get_access(const char* path, int mode) {
-	file_data* dat = get_file_data(path);
-	if (!dat) {
-		return -ENOENT;
-	}
-
-	if (mode == F_OK) {
-		return 0;
-	}
-
-	if (!check_mode(dat, mode)) {
-		return -EACCES;
-	}
-
-	return 0;
-}
-
 int get_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
                 off_t offset, struct fuse_file_info* fi) {
 	(void) offset;

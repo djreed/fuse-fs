@@ -39,7 +39,7 @@ void init_default(super_blk* fs) {
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0100444;
+	hello->mode = 0040444;
 	hello->used = true;
 }
 
@@ -105,6 +105,7 @@ int fs_access(const super_blk* fs, const char* path, int mask) {
 int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	const inode* n = get_inode(fs, path);
 	if (n == NULL) {
+		printf("enoent\n");
 		return -ENOENT;
 	}
 
@@ -121,8 +122,7 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	return 0;
 }
 
-int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t filler,
-               off_t offset, struct fuse_file_info* fi) {
+int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi) {
 	(void) offset;
 	(void) fi;
 	if (strncmp(path, "/", 1) != 0) {
@@ -159,7 +159,7 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
         // Get respective inode
         inode* node = get_inode(fs, from);
 
-        if (node == 0 || node == NULL) {
+        if (node == NULL) {
                 return -1;
         }
         memset(node->path, '\0', strlen(node->path));
@@ -172,11 +172,11 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
         const inode* node = get_inode(fs, path);
 
-        if (node == 0 || node == NULL) {
+        if (node == NULL) {
                 return -1;
         }
         
-        const char* data = node->data;
+        char* data = node->data;
 
         int len = strlen(data) + 1;
 
@@ -184,10 +184,9 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 len = size;
         }
 
-        void* src = ((void*)data) + offset;
+        char* src = data + offset;
 
-        //TODO: Error handle for size_t != len
-        memcpy((void*)buf, src, len);
+        memcpy(buf, src, len);
 
         return 0;
 }
@@ -199,7 +198,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 return -1;
         }
 
-        const char* data = node->data;
+        char* data = node->data;
 
         int len = strlen(buf) + 1;
 
@@ -207,7 +206,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 len = size;
         }
 
-        void* dest = ((void*)data) + offset;
+        char* dest = data + offset;
 
         //TODO: Error handle for destination being too small for data
         memcpy((void*)dest, buf, len);

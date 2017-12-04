@@ -12,9 +12,6 @@
 
 #include "data.h"
 
-const int NUFS_SIZE = 1024 * 1024;
-const int PAGE_COUNT = 256;
-
 char* get_free_blk(data_blks* blks) {
 	size_t free_idx = 0;
 	for (size_t i = 0; i < blks->n_blks; i++) {
@@ -40,7 +37,7 @@ void init_default(super_blk* fs) {
 	hello->data = get_free_blk(&fs->data);
 	memcpy(hello->data, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0100444;
+	hello->mode = 0100777;
 	hello->used = true;
         hello->data_size = 5;
 }
@@ -179,45 +176,52 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         
         char* data = node->data;
 
-        int len = node->data_size;
-
-        char* src = data + offset;
-
-        if (src > data + len) {
+        if (offset > node->data_size) {
                 return -ENOMEM;
         }
 
-        if (size < len) {
-                len = size;
+        int read_size = node->data_size;
+        char* src = data + offset;
+
+        if (size < read_size) {
+                read_size = size;
         }
 
-        int dsize = node->data_size - offset;
-        len = dsize < len ? dsize : len;
+        int to_end = node->data_size - offset;
+        read_size = to_end < read_size ? to_end : read_size;
 
-        memcpy(buf, src, len);
+        memcpy(buf, src, read_size);
 
-        return len;
+        // Number of bytes read
+        return read_size;
 }
 
+// Write data to file
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        const inode* node = get_inode(fs, path);
+        inode* node = get_inode(fs, path);
 
         if (node == NULL) {
                 return -ENOENT;
         }
-
+        
         char* data = node->data;
+        printf("data: '%s'\n", data);
+        
+        char* write_point = data + offset;
+        printf("write pt: '%s'\n", write_point);
 
-        int len = strlen(buf);
-
-        if (size < len) {
-                len = size;
+        // If end of write puts you past allocated memory
+        if (write_point + size > data + fs->data.blk_sz
+            || offset > fs->data.blk_sz) { // Or would start you OOB
+                return -ENOMEM;
         }
 
-        char* dest = data + offset;
+        printf("buf: '%s'\nsize: %i\n", buf, size);
 
-        //TODO: Error handle for destination being too small for data
-        memcpy((void*)dest, buf, len);
+        memcpy(write_point, buf, size);
 
-        return 0;
+        node->data_size = node->data_size + size;
+        
+        // Number of bytes written
+        return size;
 }

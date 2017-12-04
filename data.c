@@ -143,12 +143,12 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
         inode* node = get_inode(fs, from);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
+
         memset(node->path, '\0', strlen(node->path));
         memcpy(node->path, to, strlen(to));
 
-        
         return 0;
 }
 
@@ -156,7 +156,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         const inode* node = get_inode(fs, path);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
         
         char* data = node->data;
@@ -166,7 +166,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         char* src = data + offset;
 
         if (src > data + len) {
-                return -1;
+                return -ENOMEM;
         }
 
         if (size < len) {
@@ -185,7 +185,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
         const inode* node = get_inode(fs, path);
 
         if (node == NULL) {
-                return -1;
+                return -ENOENT;
         }
 
         char* data = node->data;

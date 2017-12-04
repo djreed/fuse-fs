@@ -136,3 +136,63 @@ int fs_readdir(const super_blk* fs, const char* path, void* buf, fuse_fill_dir_t
 	
 	return 0;
 }
+
+int fs_rename(const super_blk* fs, const char* from, const char* to) {
+        // Get respective inode
+        inode* node = get_inode(fs, from);
+
+        if (node == 0 || node == NULL) {
+                return -1;
+        }
+        memset(node->path, '\0', strlen(node->path));
+        memcpy(node->path, to, strlen(to));
+
+        
+        return 0;
+}
+
+int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+        const inode* node = get_inode(fs, path);
+
+        if (node == 0 || node == NULL) {
+                return -1;
+        }
+        
+        const char* data = node->data;
+
+        int len = strlen(data) + 1;
+
+        if (size < len) {
+                len = size;
+        }
+
+        void* src = ((void*)data) + offset;
+
+        //TODO: Error handle for size_t != len
+        memcpy((void*)buf, src, len);
+
+        return 0;
+}
+
+int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
+        const inode* node = get_inode(fs, path);
+
+        if (node == NULL) {
+                return -1;
+        }
+
+        const char* data = node->data;
+
+        int len = strlen(buf) + 1;
+
+        if (size < len) {
+                len = size;
+        }
+
+        void* dest = ((void*)data) + offset;
+
+        //TODO: Error handle for destination being too small for data
+        memcpy((void*)dest, buf, len);
+
+        return 0;
+}

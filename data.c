@@ -323,3 +323,21 @@ int fs_unlink(super_blk* fs, const char* path) {
 
         return 0;
 }
+
+int fs_truncate(super_blk* fs, const char* path, off_t size) {
+	inode* n = (inode*)get_inode(fs, path);
+	if (n == NULL) {
+		return -ENOENT;
+	}
+
+	if (n->db_info.offset == 0) {
+		return -1;
+	}
+
+	if (size > PAGE_SIZE) {
+		return -ENOMEM;
+	} 
+
+	n->data_size = size;
+	return 0;
+}

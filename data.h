@@ -8,8 +8,9 @@
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
 
-static const int NUFS_SIZE = 1024 * 1024;
-static const int PAGE_COUNT = 256;
+#define NUFS_SIZE (1024 * 1024)
+#define PAGE_COUNT (256)
+#define PAGE_SIZE (NUFS_SIZE / PAGE_COUNT)
 
 typedef struct data_blk_info {
 	size_t blk_status_idx;
@@ -53,3 +54,4 @@ int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev);
 int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]);
 int fs_chmod(const super_blk* fs, const char* path, mode_t mode);
 int fs_unlink(super_blk* fs, const char* path);
+int fs_truncate(super_blk* fs, const char* path, off_t size);

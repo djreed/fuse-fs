@@ -50,4 +50,4 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
 int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev);
 int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]);
 int fs_chmod(const super_blk* fs, const char* path, mode_t mode);
-int fs_unlink(const super_blk* fs, const char* path);
+int fs_unlink(super_blk* fs, const char* path);

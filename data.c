@@ -32,22 +32,26 @@ data_blk_info get_free_blk(data_blks* blks) {
 void init_default(super_blk* fs) {
 	inode* root = &fs->inodes[0];
 	inode* hello = &fs->inodes[1];
-	root->data = NULL;
+        
+        data_blk_info root_info;
+        root_info.blk_status_idx = -1;
+        root_info.offset = 0;
+        
+	root->db_info = root_info;
 	memcpy(root->path, "/", 1);
 	root->mode = 0040755;
 	root->accessed_at = time(NULL);
 	root->changed_at = root->accessed_at;
 	root->modified_at = root->accessed_at;
-  root->data_size = 0;
-
-	hello->data = get_free_blk(&fs->data);
-	memcpy(hello->data, "hello", 5);
+        root->data_size = 0;
+        
+        hello->db_info = get_free_blk(&fs->data);
+	memcpy(((char*)fs) + hello->db_info.offset, "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0100444;
+	hello->mode = 0100644;
 	hello->accessed_at = time(NULL);
 	hello->changed_at = hello->accessed_at;
 	hello->modified_at = hello->accessed_at;
-	hello->mode = 0100777;
 	hello->data_size = 5;
 }
 
@@ -120,7 +124,8 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	st->st_uid = getuid();
 	st->st_gid = getgid();
 	st->st_mode = n->mode;
-	if (n->data) {
+        
+	if (n->db_info.offset == 0) {
 		st->st_size = n->data_size;
 	} else {
 		st->st_size = 0;
@@ -186,7 +191,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 return -ENOENT;
         }
         
-        char* data = node->data;
+        char* data = ((char*)fs) + node->db_info.offset;
 
         // Can't read past data inside file
         if (offset > node->data_size) {
@@ -219,7 +224,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 return -ENOENT;
         }
         
-        char* data = node->data;
+        char* data = ((char*)fs) + node->db_info.offset;
         
         char* write_point = data + offset;
 
@@ -261,14 +266,14 @@ int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev) {
 		return -ENOMEM;
 	}
 	
-	char* data_ptr = get_free_blk(&fs->data);
-	if (data_ptr == NULL) {
+	data_blk_info data_blk = get_free_blk(&fs->data);
+	if (data_blk.offset = 0) {
 		return -ENOMEM;
 	}
 	
 	n->mode = mode;
 	memcpy(n->path, path, strlen(path));
-	n->data = data_ptr;
+	n->db_info = data_blk;
 
 	return 0;
 }
@@ -296,6 +301,25 @@ int fs_chmod(const super_blk* fs, const char* path, mode_t mode) {
         return 0;
 }
 
-int fs_unlink(const super_blk* fs, const char* path) {
-        return -1
+int fs_unlink(super_blk* fs, const char* path) {
+        inode* n = (inode*)get_inode(fs, path);
+        
+        if (n == NULL) {
+                return -ENOENT;
+        }
+
+        memset(((char*)fs) + n->db_info.offset, 0, n->data_size);
+
+        fs->data.blk_status[n->db_info.blk_status_idx] = false;
+
+        memset(n->path, 0, strlen(n->path));
+        n->mode = 0;
+        n->db_info.blk_status_idx = -1;
+        n->db_info.offset = 0;
+        n->accessed_at = 0;
+        n->modified_at = 0;
+        n->changed_at = 0;
+        n->data_size = 0;
+
+        return 0;
 }

@@ -273,7 +273,7 @@ int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev) {
 	}
 	
 	data_blk_info data_blk = get_free_blk(&fs->data);
-	if (data_blk.offset = 0) {
+	if (data_blk.offset == 0) {
 		return -ENOMEM;
 	}
 	

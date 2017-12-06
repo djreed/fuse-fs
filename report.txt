@@ -1,0 +1,37 @@
+# Fuse FS
+## Advantages and Drawbacks
+Advantages:
+	- Fast for 4k or smaller files
+	- Fits in about 1 MB
+	- Support metadata
+Disadvantages:
+	- No directories
+	- Cannot store anything greater than 4k
+	- No hard links
+	- No sym links
+	- Perms only work for single user
+	- No journaling
+
+What we would add if we had time:
+	- Hard links
+	- Large files
+	- Directories
+	- Sym links
+	- More than 1MB of total data
+	- Defragmentation
+
+## Completed features
+	- [x] Create files.
+	- [x] List the files in the filesystem root directory (where you mounted it).
+	- [x] Write to small files (under 4k).
+	- [x] Read from small files (under 4k).
+	- [x] Delete files.
+	- [x] Rename files.
+	- [ ] Create hard links
+	- [ ] Read and write from large files (over 4k)
+	- [ ] Create directories and nested directories
+	- [ ] Remove directories
+	- [x] Support metadata (permissions and timestamps) for files and directories
+
+## Non-required functionality
+N/A

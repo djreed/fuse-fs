@@ -4,16 +4,15 @@ Advantages:
 	- Fast for 4k or smaller files
 	- Fits in about 1 MB
 	- Support metadata
+	- Hard links
 Disadvantages:
 	- No directories
 	- Cannot store anything greater than 4k
-	- No hard links
 	- No sym links
 	- Perms only work for single user
 	- No journaling
 
 What we would add if we had time:
-	- Hard links
 	- Large files
 	- Directories
 	- Sym links

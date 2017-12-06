@@ -46,7 +46,6 @@ void init_default(super_blk* fs) {
 }
 
 super_blk* init_fs(const char* path) {
-	// TODO: May be useful to not hardcode sizes of arrays in super_blk
 	int fd = open(path, O_CREAT | O_RDWR, 0644);
 	assert(fd != -1);
 
@@ -389,7 +388,6 @@ int fs_truncate(super_blk* fs, const char* path, off_t size) {
 
 
 int fs_link(super_blk* fs, const char* src, const char* dst) {
-	// TODO: Writeme
         const inode* source = get_inode(fs, src);
 
         int idx = find_inode_idx(fs, src);

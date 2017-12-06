@@ -33,13 +33,11 @@ typedef struct inode {
 typedef struct data_blks {
 	size_t blk_sz;
 	size_t n_blks;
-	// TODO: Make this a bitmap
 	bool blk_status[255]; // false = open, true = used
 	size_t data_offset;
 } data_blks;
 
 typedef struct super_blk {
-	// Maybe TODO: Make inode status a bitmap?
 	inode inodes[255];
 	data_blks data;
 } super_blk;

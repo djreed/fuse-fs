@@ -29,6 +29,10 @@ data_blk_info get_free_blk(data_blks* blks) {
 	return r;
 }
 
+char* fs_dataptr(const super_blk* fs,  inode* n) {
+        return ((char*)fs) + n->db_info.offset;
+}
+
 void init_default(super_blk* fs) {
 	inode* root = &fs->inodes[0];
 	inode* hello = &fs->inodes[1];
@@ -46,7 +50,7 @@ void init_default(super_blk* fs) {
         root->data_size = 0;
         
         hello->db_info = get_free_blk(&fs->data);
-	memcpy(get_data_pointer(fs, hello), "hello", 5);
+	memcpy(fs_dataptr(fs, hello), "hello", 5);
 	memcpy(hello->path, "/hello.txt", 10);
 	hello->mode = 0100644;
 	hello->accessed_at = time(NULL);
@@ -91,9 +95,7 @@ const inode* get_inode(const super_blk* fs, const char* path) {
 	return NULL;
 }
 
-const char* get_data_pointer(const super_blk* fs,  inode* n) {
-        return ((char*)fs) + n->db_info.offset;
-}
+
 
 int check_mode(const inode* n, int mode) {
 	// NOTE: we only check owner perms
@@ -195,7 +197,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 return -ENOENT;
         }
         
-        char* data = get_data_pointer(fs, node);
+        char* data = fs_dataptr(fs, node);
 
         // Can't read past data inside file
         if (offset > node->data_size) {
@@ -228,7 +230,7 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
                 return -ENOENT;
         }
         
-        char* data = get_data_pointer(fs, node);
+        char* data = fs_dataptr(fs, node);
         
         char* write_point = data + offset;
 
@@ -312,7 +314,7 @@ int fs_unlink(super_blk* fs, const char* path) {
                 return -ENOENT;
         }
 
-        memset(get_data_pointer(fs, n), 0, n->data_size);
+        memset(fs_dataptr(fs, n), 0, n->data_size);
 
         fs->data.blk_status[n->db_info.blk_status_idx] = false;
 

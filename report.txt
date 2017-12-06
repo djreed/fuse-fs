@@ -27,7 +27,7 @@ What we would add if we had time:
 	- [x] Read from small files (under 4k).
 	- [x] Delete files.
 	- [x] Rename files.
-	- [ ] Create hard links
+	- [x] Create hard links
 	- [ ] Read and write from large files (over 4k)
 	- [ ] Create directories and nested directories
 	- [ ] Remove directories

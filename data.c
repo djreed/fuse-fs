@@ -130,8 +130,11 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	st->st_uid = getuid();
 	st->st_gid = getgid();
 	st->st_mode = n->mode;
+	st->st_atim.tv_sec = n->accessed_at;
+	st->st_mtim.tv_sec = n->modified_at;
+	st->st_ctim.tv_sec = n->changed_at;
         
-	if (n->db_info.offset == 0) {
+	if (n->db_info.offset != 0) {
 		st->st_size = n->data_size;
 	} else {
 		st->st_size = 0;
@@ -244,6 +247,8 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
 
         time_t t = time(NULL);
         node->modified_at = t;
+        node->accessed_at = t;
+        node->changed_at = t;
 
         node->data_size = node->data_size + size;
         

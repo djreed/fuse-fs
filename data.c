@@ -205,7 +205,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         }
 
         int read_size = node->data_size;
-        char* src = data + offset;
+        char* read_ptr = data + offset;
 
         // min(size to read, size of file from read_start to EOF)
         read_size = size < read_size ? size : read_size;
@@ -213,7 +213,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
         int to_end = node->data_size - offset;
         read_size = to_end < read_size ? to_end : read_size;
 
-        memcpy(buf, src, read_size);
+        memcpy(buf, read_ptr, read_size);
 
         time_t t = time(NULL);
         node->accessed_at = t;
@@ -232,15 +232,15 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
         
         char* data = fs_dataptr(fs, node);
         
-        char* write_point = data + offset;
+        char* write_ptr = data + offset;
 
         // If end of write puts you past allocated memory
-        if (write_point + size > data + fs->data.blk_sz
+        if (write_ptr + size > data + fs->data.blk_sz
             || offset > fs->data.blk_sz) { // Or would start you OOB
                 return -ENOMEM;
         }
 
-        memcpy(write_point, buf, size);
+        memcpy(write_ptr, buf, size);
 
         time_t t = time(NULL);
         node->modified_at = t;

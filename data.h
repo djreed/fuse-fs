@@ -20,6 +20,9 @@ typedef struct data_blk_info {
 typedef struct inode {
 	char path[256];
 	int mode;
+        int references;
+        bool is_hlink;
+        int link_idx;
 	data_blk_info db_info;
 	time_t accessed_at;
 	time_t modified_at;

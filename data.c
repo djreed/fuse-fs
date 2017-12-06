@@ -34,29 +34,10 @@ char* fs_dataptr(const super_blk* fs,  inode* n) {
 }
 
 void init_default(super_blk* fs) {
-	inode* root = &fs->inodes[0];
-	inode* hello = &fs->inodes[1];
-        
-        data_blk_info root_info;
-        root_info.blk_status_idx = -1;
-        root_info.offset = 0;
-        
-	root->db_info = root_info;
-	memcpy(root->path, "/", 1);
-	root->mode = 0040755;
-	root->accessed_at = time(NULL);
-	root->changed_at = root->accessed_at;
-	root->modified_at = root->accessed_at;
-        root->data_size = 0;
-        
-        hello->db_info = get_free_blk(&fs->data);
-	memcpy(fs_dataptr(fs, hello), "hello", 5);
-	memcpy(hello->path, "/hello.txt", 10);
-	hello->mode = 0100644;
-	hello->accessed_at = time(NULL);
-	hello->changed_at = hello->accessed_at;
-	hello->modified_at = hello->accessed_at;
-	hello->data_size = 5;
+        fs_mknod(fs, "/", 0040755, 0);
+        fs_mknod(fs, "/hello.txt", 0100644, 0);
+
+        fs_write(fs, "/hello.txt", "hello\n", 6, 0, NULL);
 }
 
 super_blk* init_fs(const char* path) {
@@ -78,24 +59,45 @@ super_blk* init_fs(const char* path) {
 	return fs;
 }
 
-const inode* get_inode(const super_blk* fs, const char* path) {
-	size_t path_len = strlen(path);
-	for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
-		const inode* node = &fs->inodes[i];
+int find_inode_idx(const super_blk* fs, const char* path) {
+        size_t path_len = strlen(path);
+        for (size_t i = 0; i < sizeof(fs->inodes) / sizeof(inode); i++) {
+                const inode* node = &fs->inodes[i];
 		if (node->path[0] == '\0') {
 			continue;
 		}
-		
-		size_t n_path_len = strlen(node->path);
-		if (n_path_len == path_len && strncmp(node->path, path, path_len) == 0) {
-			return node;
-		}
-	}
 
-	return NULL;
+		if (node->references > 0) {
+			return i;
+		}
+        }
+        return -1;
 }
 
+const inode* get_inode(const super_blk* fs, const char* path) {
+	int index = find_inode_idx(fs, path);
 
+        if (index == -1) {
+                return NULL;
+        }
+
+	return &fs->inodes[index];
+}
+
+const inode* get_hlink_root(const super_blk* fs, const char* path) {
+        const inode* node = get_inode(fs, path);
+                
+        if (!node) {
+                return NULL;
+        }
+
+        if (node->is_hlink) {
+                inode next = fs->inodes[node->link_idx];
+                return get_hlink_root(fs, next.path);
+        } else {
+                return node;
+        }
+}
 
 int check_mode(const inode* n, int mode) {
 	// NOTE: we only check owner perms
@@ -133,7 +135,7 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	st->st_atim.tv_sec = n->accessed_at;
 	st->st_mtim.tv_sec = n->modified_at;
 	st->st_ctim.tv_sec = n->changed_at;
-	st->st_nlink = 1;
+	st->st_nlink = n->references;
         
 	if (n->db_info.offset != 0) {
 		st->st_size = n->data_size;
@@ -195,7 +197,7 @@ int fs_rename(const super_blk* fs, const char* from, const char* to) {
 }
 
 int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        inode* node = (inode*)get_inode(fs, path);
+        inode* node = (inode*)get_hlink_root(fs, path);
 
         if (node == NULL) {
                 return -ENOENT;
@@ -232,7 +234,7 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
 
 // Write data to file
 int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi) {
-        inode* node = (inode*)get_inode(fs, path);
+        inode* node = (inode*)get_hlink_root(fs, path);
 
         if (node == NULL) {
                 return -ENOENT;
@@ -294,12 +296,14 @@ int fs_mknod(super_blk* fs, const char* path, mode_t mode, dev_t dev) {
 	n->mode = mode;
 	memcpy(n->path, path, strlen(path));
 	n->db_info = data_blk;
+        n->references = 1;
 
 	return 0;
 }
 
 int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]) {
 	inode* n = (inode*)get_inode(fs, path);
+
 	if (n == NULL) {
 		return -ENOENT;
 	}
@@ -328,24 +332,33 @@ int fs_unlink(super_blk* fs, const char* path) {
                 return -ENOENT;
         }
 
-        memset(fs_dataptr(fs, n), 0, n->data_size);
-
-        fs->data.blk_status[n->db_info.blk_status_idx] = false;
-
         memset(n->path, 0, strlen(n->path));
         n->mode = 0;
-        n->db_info.blk_status_idx = -1;
-        n->db_info.offset = 0;
+        n->references -= 1;
         n->accessed_at = 0;
         n->modified_at = 0;
         n->changed_at = 0;
         n->data_size = 0;
 
+        if (n->is_hlink) {
+                inode* root = (inode*)get_hlink_root(fs, path);
+                root->references -= 1;
+        } else {
+                if (n->references == 0) {
+                        memset(fs_dataptr(fs, n), 0, n->data_size);
+                        fs->data.blk_status[n->db_info.blk_status_idx] = false;
+
+                        n->db_info.blk_status_idx = -1;
+                        n->db_info.offset = 0;
+                        
+                }
+        }
+
         return 0;
 }
 
 int fs_truncate(super_blk* fs, const char* path, off_t size) {
-	inode* n = (inode*)get_inode(fs, path);
+	inode* n = (inode*)get_hlink_root(fs, path);
 	if (n == NULL) {
 		return -ENOENT;
 	}
@@ -362,7 +375,42 @@ int fs_truncate(super_blk* fs, const char* path, off_t size) {
 	return 0;
 }
 
+
+
 int fs_link(super_blk* fs, const char* src, const char* dst) {
 	// TODO: Writeme
+        const inode* source = get_inode(fs, src);
+
+        int idx = find_inode_idx(fs, src);
+
+        if (idx == -1) {
+                return -ENOENT;
+        }
+
+        inode* original = &fs->inodes[idx];
+
+        if (source->references == 0) {
+                return -ENOENT;
+        }
+
+        original->references += 1;
+
+        inode* node = fs_get_free_inode(fs);
+        memcpy(node->path, dst, strlen(dst));
+        node->mode = original->mode;
+        node->references = 1;
+        node->is_hlink = true;
+        node->link_idx = idx;
+
+        node->db_info.blk_status_idx = -1;
+        node->db_info.offset = 0;
+        
+        time_t t = time(NULL);
+        node->modified_at = t;
+        node->accessed_at = t;
+        node->changed_at = t;
+
+        node->data_size = -1;
+        
 	return 0;
 }

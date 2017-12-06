@@ -134,6 +134,12 @@ nufs_utimens(const char* path, const struct timespec ts[2])
 	return rv;
 }
 
+int
+nufs_link(const char* src, const char* dst) {
+	printf("link(%s, %s)\n", src, dst);
+	return fs_link(fs, src, dst);
+}
+
 void
 nufs_init_ops(struct fuse_operations* ops)
 {
@@ -152,6 +158,7 @@ nufs_init_ops(struct fuse_operations* ops)
         ops->read     = nufs_read;
         ops->write    = nufs_write;
         ops->utimens  = nufs_utimens;
+        ops->link     = nufs_link;
 };
 
 struct fuse_operations nufs_ops;

@@ -133,6 +133,7 @@ int fs_getattr(const super_blk* fs, const char* path, struct stat *st) {
 	st->st_atim.tv_sec = n->accessed_at;
 	st->st_mtim.tv_sec = n->modified_at;
 	st->st_ctim.tv_sec = n->changed_at;
+	st->st_nlink = 1;
         
 	if (n->db_info.offset != 0) {
 		st->st_size = n->data_size;
@@ -358,5 +359,10 @@ int fs_truncate(super_blk* fs, const char* path, off_t size) {
 	} 
 
 	n->data_size = size;
+	return 0;
+}
+
+int fs_link(super_blk* fs, const char* src, const char* dst) {
+	// TODO: Writeme
 	return 0;
 }

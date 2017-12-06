@@ -55,3 +55,4 @@ int fs_utimens(super_blk* fs, const char* path, const struct timespec ts[2]);
 int fs_chmod(const super_blk* fs, const char* path, mode_t mode);
 int fs_unlink(super_blk* fs, const char* path);
 int fs_truncate(super_blk* fs, const char* path, off_t size);
+int fs_link(super_blk* fs, const char* src, const char* dst);

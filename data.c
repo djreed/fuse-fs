@@ -200,6 +200,10 @@ int fs_read(const super_blk* fs, const char *path, char *buf, size_t size, off_t
                 return -ENOENT;
         }
         
+        if (!check_mode(node, 4)) {
+                return -EACCES;
+        }
+
         char* data = fs_dataptr(fs, node);
 
         // Can't read past data inside file
@@ -231,6 +235,10 @@ int fs_write(const super_blk* fs, const char *path, const char *buf, size_t size
 
         if (node == NULL) {
                 return -ENOENT;
+        }
+
+        if (!check_mode(node, 2)) {
+                return -EACCES;
         }
         
         char* data = fs_dataptr(fs, node);
